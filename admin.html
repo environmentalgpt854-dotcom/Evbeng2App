@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel | EV BENG 2</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8}
+.header{background:#0B3D91;color:white;padding:15px 20px 30px;border-bottom-left-radius:22px;border-bottom-right-radius:22px;position:relative;text-align:center;}
+.title{font-size:20px;font-weight:bold}
+.content{padding:20px}
+
+/* Access Code Prompt */
+.access-box{max-width:400px;margin:50px auto;padding:30px;background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.2);text-align:center;}
+.access-box input{width:100%;padding:10px;margin:15px 0;border-radius:8px;border:1px solid #ccc;}
+.access-box button{padding:12px 20px;background:#1e3a8a;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
+
+/* Admin Panel */
+.admin-panel{display:none;}
+.admin-panel h2{text-align:center;margin-bottom:20px;}
+.form-group{margin-bottom:15px;}
+.form-group label{display:block;margin-bottom:5px;font-weight:bold;}
+.form-group input, .form-group select{width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;}
+button.upload-btn{padding:10px 15px;background:#0B3D91;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
+
+/* Upload Preview */
+#preview{margin-top:20px;background:#eef3fa;padding:15px;border-radius:8px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">Admin Panel</div>
+</div>
+
+<div class="content">
+
+<!-- ACCESS CODE -->
+<div class="access-box" id="accessBox">
+  <h3>Enter Admin Access Code</h3>
+  <input type="password" id="accessCode" placeholder="Enter code">
+  <button onclick="checkAccess()">Enter</button>
+  <p style="font-size:0.85em;color:#ff5733;margin-top:10px;">⚠️ Only authorized personnel</p>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-panel" id="adminPanel">
+  <h2>Welcome, Admin!</h2>
+
+  <div class="form-group">
+    <label for="courseSelect">Select Course</label>
+    <select id="courseSelect">
+      <option value="">--Choose Course--</option>
+      <option value="MA210">MA210</option>
+      <option value="CH210">CH210</option>
+      <option value="PH210">PH210</option>
+      <option value="BI210">BI210</option>
+      <option value="EN211">EN211</option>
+      <option value="ED211">ED211</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="typeSelect">Select Content Type</label>
+    <select id="typeSelect">
+      <option value="">--Choose Type--</option>
+      <option value="papers">Papers</option>
+      <option value="videos">Videos</option>
+      <option value="documents">Documents</option>
+      <option value="tasks">Tasks</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="fileTitle">File / Video Title</label>
+    <input type="text" id="fileTitle" placeholder="Enter title">
+  </div>
+
+  <div class="form-group">
+    <label for="fileLink">Google Drive Link</label>
+    <input type="text" id="fileLink" placeholder="Paste Google Drive link">
+  </div>
+
+  <button class="upload-btn" onclick="uploadFile()">Upload</button>
+
+  <div id="preview"></div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script>
+// Firebase config
+var firebaseConfig = {
+  apiKey: "AIzaSyB7e9k4jB4sVDpqK0wKdY1GK3wEI8fFck4",
+  authDomain: "smarthub-ff357.firebaseapp.com",
+  databaseURL: "https://smarthub-ff357-default-rtdb.firebaseio.com",
+  projectId: "smarthub-ff357",
+  storageBucket: "smarthub-ff357.appspot.com",
+  messagingSenderId: "794427490398",
+  appId: "1:794427490398:web:3350b0927dfc62d30134cf",
+  measurementId: "G-7FZTLSB4LG"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+
+// ✅ Access Code Check
+function checkAccess(){
+  const code = document.getElementById("accessCode").value.trim();
+  if(code === "653425"){
+    document.getElementById("accessBox").style.display = "none";
+    document.getElementById("adminPanel").style.display = "block";
+  } else {
+    alert("Access Denied! Redirecting to Dashboard...");
+    window.location.href = "dashboard.html";
+  }
+}
+
+// ✅ Upload Function
+function uploadFile(){
+  const course = document.getElementById("courseSelect").value;
+  const type = document.getElementById("typeSelect").value;
+  const title = document.getElementById("fileTitle").value.trim();
+  const link = document.getElementById("fileLink").value.trim();
+
+  if(!course || !type || !title || !link){
+    alert("Please fill all fields!");
+    return;
+  }
+
+  // Save to Firestore
+  db.collection("content")
+    .doc(course)
+    .collection(type)
+    .add({
+      title: title,
+      link: link,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    .then(()=>{
+      document.getElementById("preview").innerHTML = `
+        <p><strong>Uploaded:</strong> ${title} (${type} for ${course})</p>`;
+      // Clear fields
+      document.getElementById("fileTitle").value = "";
+      document.getElementById("fileLink").value = "";
+      document.getElementById("courseSelect").value = "";
+      document.getElementById("typeSelect").value = "";
+      alert("File uploaded successfully!");
+    })
+    .catch(err=>{
+      alert("Error: "+err.message);
+    });
+}
+</script>
+
+</body>
+</html>

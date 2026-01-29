@@ -2,99 +2,106 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<title>Admin Panel | Learn with GPT</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel | EV BENG 2</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8}
-.header{background:#0B3D91;color:white;padding:15px 20px 30px;border-bottom-left-radius:22px;border-bottom-right-radius:22px;position:relative;text-align:center;}
-.title{font-size:20px;font-weight:bold}
-.content{padding:20px}
-
-/* Access Code Prompt */
-.access-box{max-width:400px;margin:50px auto;padding:30px;background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.2);text-align:center;}
-.access-box input{width:100%;padding:10px;margin:15px 0;border-radius:8px;border:1px solid #ccc;}
-.access-box button{padding:12px 20px;background:#1e3a8a;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
-
-/* Admin Panel */
-.admin-panel{display:none;}
-.admin-panel h2{text-align:center;margin-bottom:20px;}
-.form-group{margin-bottom:15px;}
-.form-group label{display:block;margin-bottom:5px;font-weight:bold;}
-.form-group input, .form-group select{width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;}
-button.upload-btn{padding:10px 15px;background:#0B3D91;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
-
-/* Upload Preview */
-#preview{margin-top:20px;background:#eef3fa;padding:15px;border-radius:8px;}
+body { margin:0; font-family:Arial,sans-serif; background:#f4f6f8; }
+/* Header */
+.header { background:#0B3D91; color:white; padding:20px; border-bottom-left-radius:22px; border-bottom-right-radius:22px; display:flex; align-items:center; justify-content:space-between; }
+.header .title { font-size:20px; font-weight:bold; }
+.header .welcome { font-size:14px; }
+.logout, .hamburger { cursor:pointer; font-size:22px; color:white; }
+/* Sidebar */
+.menu { position:fixed; top:0; left:0; width:260px; height:100%; background:white; transform:translateX(-100%); transition:0.3s; box-shadow:2px 0 6px rgba(0,0,0,.2); z-index:1000; }
+.menu.open { transform:translateX(0); }
+.menu a { display:block; padding:15px 20px; text-decoration:none; color:#333; }
+.menu a i { margin-right:10px; color:#0B3D91; }
+.menu a:hover { background:#eef3fa; }
+/* Main content */
+.content { margin-left:0; padding:20px; }
+.form-box { background:white; padding:25px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1); max-width:600px; margin:auto; }
+.form-box h2 { text-align:center; color:#0B3D91; margin-bottom:20px; }
+.form-box label { margin-top:15px; display:block; font-weight:bold; color:#0B3D91; }
+.form-box input, .form-box select { width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-top:5px; }
+.form-box button { margin-top:20px; width:100%; padding:12px; border:none; border-radius:8px; background:#0B3D91; color:white; font-weight:bold; cursor:pointer; font-size:16px; }
+/* Code Prompt */
+#codePrompt { display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; }
+#codePrompt input { padding:10px; font-size:16px; border-radius:8px; border:1px solid #ccc; margin-bottom:10px; }
+#codePrompt button { padding:10px 20px; background:#0B3D91; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
+#codeError { color:red; margin-top:10px; }
+#adminContent { display:none; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="title">Admin Panel</div>
+<!-- Admin Code Prompt -->
+<div id="codePrompt">
+  <h2>Enter Admin Code</h2>
+  <form id="codeForm">
+    <input type="password" id="adminCodeInput" placeholder="Enter code here" autocomplete="off">
+    <button type="submit">Enter</button>
+  </form>
+  <p id="codeError"></p>
 </div>
 
-<div class="content">
+<!-- Admin Content -->
+<div id="adminContent">
+  <div class="header">
+    <div class="hamburger"><i class="fa-solid fa-bars"></i></div>
+    <div class="title">Admin Panel</div>
+    <div class="logout"><i class="fa-solid fa-power-off"></i></div>
+  </div>
 
-<!-- ACCESS CODE -->
-<div class="access-box" id="accessBox">
-  <h3>Enter Admin Access Code</h3>
-  <input type="password" id="accessCode" placeholder="Enter code">
-  <button onclick="checkAccess()">Enter</button>
-  <p style="font-size:0.85em;color:#ff5733;margin-top:10px;">⚠️ Only authorized personnel</p>
+  <div id="sideMenu" class="menu">
+    <a href="dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
+  </div>
+
+  <div class="content">
+    <div class="form-box">
+      <h2>Upload Files</h2>
+      <form id="uploadForm">
+        <label>File Type</label>
+        <select id="fileType" required>
+          <option value="">Select type</option>
+          <option value="document">Document</option>
+          <option value="video">Video</option>
+          <option value="paper">Past Paper</option>
+        </select>
+
+        <label>Course</label>
+        <select id="course" required>
+          <option value="">Select course</option>
+          <option value="MA210">MA210</option>
+          <option value="CH210">CH210</option>
+          <option value="PH210">PH210</option>
+          <option value="BI210">BI210</option>
+          <option value="EN211">EN211</option>
+          <option value="ED211">ED211</option>
+        </select>
+
+        <label>Title</label>
+        <input type="text" id="title" placeholder="Enter file title" required>
+
+        <label>File (PDF or Video link)</label>
+        <input type="text" id="fileLink" placeholder="Enter Google Drive link" required>
+
+        <label>Download Link</label>
+        <input type="text" id="downloadLinkInput" placeholder="Enter download link" required>
+
+        <button type="submit">Upload</button>
+      </form>
+      <p id="status" style="margin-top:15px;text-align:center;color:green;"></p>
+    </div>
+  </div>
 </div>
 
-<!-- ADMIN PANEL -->
-<div class="admin-panel" id="adminPanel">
-  <h2>Welcome, Admin!</h2>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-  <div class="form-group">
-    <label for="courseSelect">Select Course</label>
-    <select id="courseSelect">
-      <option value="">--Choose Course--</option>
-      <option value="MA210">MA210</option>
-      <option value="CH210">CH210</option>
-      <option value="PH210">PH210</option>
-      <option value="BI210">BI210</option>
-      <option value="EN211">EN211</option>
-      <option value="ED211">ED211</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label for="typeSelect">Select Content Type</label>
-    <select id="typeSelect">
-      <option value="">--Choose Type--</option>
-      <option value="papers">Papers</option>
-      <option value="videos">Videos</option>
-      <option value="documents">Documents</option>
-      <option value="tasks">Tasks</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label for="fileTitle">File / Video Title</label>
-    <input type="text" id="fileTitle" placeholder="Enter title">
-  </div>
-
-  <div class="form-group">
-    <label for="fileLink">Google Drive Link</label>
-    <input type="text" id="fileLink" placeholder="Paste Google Drive link">
-  </div>
-
-  <button class="upload-btn" onclick="uploadFile()">Upload</button>
-
-  <div id="preview"></div>
-</div>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-
-<script>
-// Firebase config
-var firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyCvL_D8wRVC3hS0mEvTt2J_D-LG7wFFpx0",
   authDomain: "environmentalgpt-4974a.firebaseapp.com",
   projectId: "environmentalgpt-4974a",
@@ -103,57 +110,59 @@ var firebaseConfig = {
   appId: "1:947094029861:web:ffa5c1ad4abff06d6e21cc",
   measurementId: "G-36T3Y37DS4"
 };
-firebase.initializeApp(firebaseConfig);
-var db = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-// ✅ Access Code Check
-function checkAccess(){
-  const code = document.getElementById("accessCode").value.trim();
-  if(code === "653425"){
-    document.getElementById("accessBox").style.display = "none";
-    document.getElementById("adminPanel").style.display = "block";
+/* Admin code check */
+const ADMIN_CODE = "653425";
+document.getElementById("codeForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  const input = document.getElementById("adminCodeInput").value.trim();
+  if(input === ADMIN_CODE){
+    document.getElementById("codePrompt").style.display = "none";
+    document.getElementById("adminContent").style.display = "block";
   } else {
-    alert("Access Denied! Redirecting to Dashboard...");
-    window.location.href = "dashboard.html";
+    document.getElementById("codeError").innerText = "❌ Incorrect code!";
   }
-}
+});
 
-// ✅ Upload Function
-function uploadFile(){
-  const course = document.getElementById("courseSelect").value;
-  const type = document.getElementById("typeSelect").value;
-  const title = document.getElementById("fileTitle").value.trim();
+/* Check if logged in */
+onAuthStateChanged(auth, user=>{
+  if(!user) window.location.href="login.html";
+});
+
+/* Logout */
+document.querySelector('.logout').onclick = async ()=>{
+  await signOut(auth);
+  window.location.href="login.html";
+};
+
+/* Sidebar toggle */
+const sideMenu=document.getElementById('sideMenu');
+document.querySelector('.hamburger').onclick = ()=> sideMenu.classList.toggle('open');
+
+/* Upload form */
+document.getElementById("uploadForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const type = document.getElementById("fileType").value;
+  const course = document.getElementById("course").value;
+  const title = document.getElementById("title").value.trim();
   const link = document.getElementById("fileLink").value.trim();
+  const download = document.getElementById("downloadLinkInput").value.trim();
 
-  if(!course || !type || !title || !link){
-    alert("Please fill all fields!");
-    return;
-  }
+  if(!type || !course || !title || !link || !download) return;
 
-  // Save to Firestore
-  db.collection("content")
-    .doc(course)
-    .collection(type)
-    .add({
-      title: title,
-      link: link,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    })
-    .then(()=>{
-      document.getElementById("preview").innerHTML = `
-        <p><strong>Uploaded:</strong> ${title} (${type} for ${course})</p>`;
-      // Clear fields
-      document.getElementById("fileTitle").value = "";
-      document.getElementById("fileLink").value = "";
-      document.getElementById("courseSelect").value = "";
-      document.getElementById("typeSelect").value = "";
-      alert("File uploaded successfully!");
-    })
-    .catch(err=>{
-      alert("Error: "+err.message);
+  try{
+    await addDoc(collection(db,"files"),{
+      type, course, title, link, download, createdAt: serverTimestamp()
     });
-}
+    document.getElementById("status").innerText = `✅ ${title} uploaded successfully!`;
+    e.target.reset();
+  }catch(err){
+    document.getElementById("status").innerText = `❌ Upload failed: ${err.message}`;
+  }
+});
 </script>
-
 </body>
 </html>

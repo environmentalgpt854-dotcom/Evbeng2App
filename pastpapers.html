@@ -2,224 +2,129 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Past Papers | Learn with GPT</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<title>Past Papers</title>
 <style>
-body{ margin:0; font-family:Arial,sans-serif; background:#f4f6f8; }
-/* Header */
-.header{ background:#0B3D91; color:white; padding:15px 20px 30px; border-bottom-left-radius:22px; border-bottom-right-radius:22px; position:relative; text-align:center;}
-.hamburger{ position:absolute; left:20px; top:18px; font-size:22px; cursor:pointer; }
-.logout{ position:absolute; right:20px; top:18px; font-size:20px; cursor:pointer; }
-.title{ font-size:20px; font-weight:bold; }
-.welcome{ font-size:14px; margin-top:5px; opacity:0.9; }
-/* Sidebar */
-.menu{ position:fixed; top:0; left:0; width:260px; height:100%; background:white; box-shadow:2px 0 6px rgba(0,0,0,0.2); transform:translateX(-100%); transition:0.3s; z-index:1000; }
-.menu.open{ transform:translateX(0); }
-.menu-top{ text-align:center; padding:20px; border-bottom:1px solid #e3ebf5; }
-.menu-logo{ width:90px; border-radius:50%; }
-.menu a{ display:block; padding:15px 20px; text-decoration:none; color:#333; }
-.menu a i{ margin-right:10px; color:#0B3D91; }
-.menu a:hover{ background:#eef3fa; }
-/* Content */
-.content{ padding:20px; }
-/* Grid */
-.grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:15px; }
-/* Cards */
-.card{ background:white; padding:20px; border-radius:14px; text-align:center; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.08); transition:0.2s; }
-.card:hover{ background:#eef3fa; }
-.card i{ font-size:30px; color:#0B3D91; margin-bottom:10px; }
-.card span{ display:block; font-weight:500; }
-/* Back */
-.back{ margin-bottom:15px; cursor:pointer; color:#0B3D91; font-weight:bold; }
-/* Document Modal */
-.doc-modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; justify-content:center; align-items:center; }
-.doc-box{ width:90%; max-width:900px; height:90%; background:white; border-radius:10px; position:relative; display:flex; flex-direction:column; }
-.doc-box iframe{ flex:1; width:100%; border:none; border-radius:10px; }
-.doc-header{ padding:10px; background:#0B3D91; color:white; display:flex; justify-content:space-between; align-items:center; border-top-left-radius:10px; border-top-right-radius:10px; }
-.close-doc{ cursor:pointer; font-size:20px; }
-.download-btn{ background:#1976d2; padding:6px 12px; border-radius:6px; color:white; text-decoration:none; font-size:14px; }
-/* Search input */
-#globalSearch{ width:100%; padding:10px 15px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; font-size:16px; }
+body { font-family: Arial, sans-serif; margin:0; background:#f0f8ff; }
+header { background:#0B3D91; color:white; padding:15px 20px; display:flex; align-items:center; box-shadow:0 2px 6px rgba(0,0,0,0.2); position:relative; }
+header h1 { margin:0; font-size:1.5em; flex-grow:1; text-align:center; }
+.back-btn { position:absolute; left:15px; background:none; border:none; font-size:24px; cursor:pointer; color:white; display:none; }
+
+.container { max-width:900px; margin:20px auto; display:grid; grid-template-columns:1fr 1fr; gap:15px; padding:0 10px; }
+
+.card { background:white; padding:20px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.15); text-align:center; font-weight:bold; color:#0B3D91; cursor:pointer; transition:transform 0.2s, background 0.2s; }
+.card:hover { transform:translateY(-3px); background:#e6f2ff; }
+
+#viewer { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1000; flex-direction:column; justify-content:center; align-items:center; }
+#viewer button { position:absolute; top:20px; right:20px; font-size:28px; background:none; border:none; color:white; cursor:pointer; }
+#viewer iframe { width:90%; height:90vh; border:none; border-radius:8px; }
 </style>
 </head>
 <body>
 
-<!-- Sidebar -->
-<div id="sideMenu" class="menu">
-  <div class="menu-top"><img src="nqlogo.jpg" class="menu-logo"></div>
-  <a href="dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
+<header>
+<button class="back-btn" onclick="goBack()">&#8592;</button>
+<h1>Past Papers</h1>
+</header>
+
+<div id="mainContainer" class="container"></div>
+
+<div id="viewer">
+  <button onclick="closeViewer()">&times;</button>
+  <iframe id="paperFrame"></iframe>
 </div>
 
-<!-- Header -->
-<div class="header">
-  <div class="hamburger"><i class="fa-solid fa-bars"></i></div>
-  <div class="logout"><i class="fa-solid fa-power-off"></i></div>
-  <div class="title">Past Papers</div>
-  <div class="welcome"> <strong id="username"></strong></div>
-</div>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<div class="content">
-  <!-- Search -->
-  <input type="text" id="globalSearch" placeholder="Search all past papers..." oninput="filterAllPapers()">
-
-  <!-- Courses View -->
-  <div id="coursesView" class="grid"></div>
-
-  <!-- Topics View -->
-  <div id="topicsView" style="display:none;">
-    <div class="back" onclick="goBack()">← Back to Courses</div>
-    <h3 id="courseTitle"></h3>
-    <div id="topicsGrid" class="grid"></div>
-  </div>
-</div>
-
-<!-- Document Modal -->
-<div id="docModal" class="doc-modal">
-  <div class="doc-box">
-    <div class="doc-header">
-      <span id="docTitle"></span>
-      <div>
-        <a id="downloadLink" class="download-btn" href="#" target="_blank">Download</a>
-        <span class="close-doc" onclick="closeDoc()">✕</span>
-      </div>
-    </div>
-    <iframe id="docFrame"></iframe>
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
+<script>
+// Firebase Config
 const firebaseConfig = {
-  
+   apiKey: "AIzaSyCvL_D8wRVC3hS0mEvTt2J_D-LG7wFFpx0",
+  authDomain: "environmentalgpt-4974a.firebaseapp.com",
+  projectId: "environmentalgpt-4974a",
+  storageBucket: "environmentalgpt-4974a.firebasestorage.app",
+  messagingSenderId: "947094029861",
+  appId: "1:947094029861:web:ffa5c1ad4abff06d6e21cc",
+  measurementId: "G-36T3Y37DS4"
 };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+// --- Variables ---
+let selectedSubject = null;
+const container = document.getElementById("mainContainer");
+const backBtn = document.querySelector(".back-btn");
+let papersData = []; // all past papers
 
-const coursesView = document.getElementById("coursesView");
-const topicsView = document.getElementById("topicsView");
-const courseTitle = document.getElementById("courseTitle");
-const topicsGrid = document.getElementById("topicsGrid");
-const docModal = document.getElementById("docModal");
-const docFrame = document.getElementById("docFrame");
-const docTitle = document.getElementById("docTitle");
-const downloadLink = document.getElementById("downloadLink");
-const sideMenu = document.getElementById("sideMenu");
-const hamburger = document.querySelector('.hamburger');
-
-/* Sidebar toggle */
-hamburger.onclick = () => sideMenu.classList.toggle("open");
-document.addEventListener('click', e=>{
-  if(!sideMenu.contains(e.target)&&!hamburger.contains(e.target)){
-    sideMenu.classList.remove("open");
-  }
-});
-sideMenu.querySelectorAll('a').forEach(link => link.addEventListener('click', ()=>{sideMenu.classList.remove("open");}));
-
-/* Logout & username */
-document.querySelector('.logout').onclick = async ()=>{
-  await signOut(auth);
-  window.location.href="login.html";
-};
-onAuthStateChanged(auth,user=>{
-  if(!user) return window.location.href="login.html";
-  document.getElementById("username").innerText = user.email;
+// --- Load Papers ---
+db.collection("pastpapers").get().then(snapshot => {
+    papersData = snapshot.docs.map(doc => doc.data());
+    showSubjects();
+}).catch(err => {
+    container.innerHTML = "<p style='color:red;'>Error fetching papers: " + err + "</p>";
 });
 
-/* Load courses dynamically */
-async function loadCourses() {
-  const querySnap = await getDocs(collection(db,"files"));
-  const coursesSet = new Set();
-  querySnap.forEach(doc=>{
-    const data = doc.data();
-    if(data.type==="pastpaper") coursesSet.add(data.course);
-  });
-  coursesView.innerHTML="";
-  coursesSet.forEach(course=>{
-    const card = document.createElement("div");
-    card.className="card";
-    card.innerHTML=`<i class="fa-solid fa-box-archive"></i><span>${course}</span>`;
-    card.onclick=()=>openCourse(course);
-    coursesView.appendChild(card);
-  });
+// --- Show Subjects ---
+function showSubjects(){
+    container.innerHTML = "";
+    backBtn.style.display = "none";
+    const subjects = [...new Set(papersData.map(p => p.subject))];
+    subjects.forEach(sub => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.textContent = sub;
+        card.onclick = () => {
+            selectedSubject = sub;
+            showFiles();
+        };
+        container.appendChild(card);
+    });
 }
 
-/* Open course */
-async function openCourse(course) {
-  coursesView.style.display="none";
-  topicsView.style.display="block";
-  courseTitle.innerText = course + " Past Papers";
-  topicsGrid.innerHTML = ""; // clear previous topics
-
-  const querySnap = await getDocs(collection(db,"files"));
-  let hasFiles = false;
-  querySnap.forEach(doc=>{
-    const data = doc.data();
-    if(data.course===course && data.type==="pastpaper"){
-      hasFiles = true;
-      const card = document.createElement("div");
-      card.className="card";
-      card.innerHTML=`<i class="fa-solid fa-file-lines"></i><span>${data.title}</span>`;
-      card.onclick = ()=>viewDoc(data.link, data.download, data.title);
-      topicsGrid.appendChild(card);
+// --- Show Files ---
+function showFiles(){
+    container.innerHTML = "";
+    backBtn.style.display = "inline-block";
+    const files = papersData.filter(p => p.subject === selectedSubject);
+    if(files.length === 0){
+        container.innerHTML = "<p>No papers found for this subject.</p>";
+        return;
     }
-  });
-  if(!hasFiles) topicsGrid.innerHTML="<p>No past papers uploaded for this course yet.</p>";
+    files.forEach(f => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.textContent = f.title;
+        card.onclick = () => openViewer(f.link);
+        container.appendChild(card);
+    });
 }
 
-/* Back button */
+// --- Back button ---
 function goBack(){
-  topicsView.style.display="none";
-  coursesView.style.display="grid";
-}
-
-/* View doc */
-function viewDoc(link, download, title){
-  docFrame.src = link;
-  docTitle.innerText = title;
-  downloadLink.href = download;
-  docModal.style.display="flex";
-}
-/* Close doc */
-function closeDoc(){
-  docFrame.src="";
-  docModal.style.display="none";
-}
-
-/* Global search */
-async function filterAllPapers(){
-  const q = document.getElementById("globalSearch").value.toLowerCase();
-  if(q.trim()===""){
-    topicsView.style.display="none";
-    coursesView.style.display="grid";
-    return;
-  }
-  coursesView.style.display="none";
-  topicsView.style.display="block";
-  courseTitle.innerText="Search Results";
-  topicsGrid.innerHTML="";
-  const querySnap = await getDocs(collection(db,"files"));
-  let found = false;
-  querySnap.forEach(doc=>{
-    const data = doc.data();
-    if(data.type==="pastpaper" && data.title.toLowerCase().includes(q)){
-      found=true;
-      const card = document.createElement("div");
-      card.className="card";
-      card.innerHTML=`<i class="fa-solid fa-file-lines"></i><span>${data.title} (${data.course})</span>`;
-      card.onclick = ()=>viewDoc(data.link, data.download, data.title);
-      topicsGrid.appendChild(card);
+    if(selectedSubject){
+        selectedSubject = null;
+        showSubjects();
     }
-  });
-  if(!found) topicsGrid.innerHTML="<p>No past papers found.</p>";
 }
 
-loadCourses();
+// --- Viewer ---
+function openViewer(link){
+    document.getElementById("viewer").style.display = "flex";
+    // Google Drive PDF preview
+    const idMatch = link.match(/[-\w]{25,}/);
+    const id = idMatch ? idMatch[0] : null;
+    if(id){
+        document.getElementById("paperFrame").src = `https://drive.google.com/file/d/${id}/preview`;
+    } else {
+        document.getElementById("paperFrame").src = link;
+    }
+}
+function closeViewer(){
+    document.getElementById("viewer").style.display = "none";
+    document.getElementById("paperFrame").src = "";
+}
 </script>
+
 </body>
 </html>

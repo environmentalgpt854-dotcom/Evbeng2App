@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f0f8ff;
+}
+
+/* Header */
+.header{
+    background:#0B3D91;
+    color:white;
+    padding:18px;
+    text-align:center;
+    font-size:24px;
+    font-weight:bold;
+    position:sticky;
+    top:0;
+}
+
+/* Back button */
+.back-btn{
+    position:absolute;
+    left:15px;
+    top:18px;
+    color:white;
+    font-size:22px;
+    cursor:pointer;
+}
+
+/* Grid */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:18px;
+    padding:20px;
+}
+
+/* Cards */
+.card{
+    background:white;
+    border-radius:16px;
+    padding:35px 20px;
+    text-align:center;
+    cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    transition:0.2s;
+}
+
+.card:hover{
+    background:#eef3fa;
+    transform:translateY(-2px);
+}
+
+.card i{
+    font-size:34px;
+    color:#0B3D91;
+    margin-bottom:12px;
+}
+
+.card span{
+    display:block;
+    font-size:16px;
+    font-weight:600;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- Header -->
+<div class="header">
+
+    <div class="back-btn"
+    onclick="window.location.href='dashboard.html'">
+
+        <i class="fa-solid fa-arrow-left"></i>
+
+    </div>
+
+    Admin Panel
+
+</div>
+
+<!-- Admin Cards -->
+<div class="grid">
+
+    <!-- Upload Quiz -->
+    <div class="card"
+    onclick="location.href='adminquiz.html'">
+
+        <i class="fa-solid fa-circle-question"></i>
+
+        <span>Quiz Upload</span>
+
+    </div>
+
+    <!-- Users -->
+    <div class="card"
+    onclick="location.href='user.html'">
+
+        <i class="fa-solid fa-users"></i>
+
+        <span>Users</span>
+
+    </div>
+
+    <!-- Upload Documents -->
+    <div class="card"
+    onclick="location.href='uploadnotes.html'">
+
+        <i class="fa-solid fa-upload"></i>
+
+        <span>Upload Notes</span>
+
+    </div>
+
+    <!-- Videos -->
+    <div class="card"
+    onclick="location.href='uploadvideos.html'">
+
+        <i class="fa-solid fa-video"></i>
+
+        <span>Upload Videos</span>
+
+    </div>
+
+    <!-- Analytics -->
+    <div class="card"
+    onclick="location.href='analytics.html'">
+
+        <i class="fa-solid fa-chart-line"></i>
+
+        <span>Analytics</span>
+
+    </div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+
+import {
+    getAuth,
+    onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+import {
+    getFirestore,
+    doc,
+    getDoc
+}
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+/* Firebase Config */
+const firebaseConfig = {
+
+    apiKey: "AIzaSyCvL_D8wRVC3hS0mEvTt2J_D-LG7wFFpx0",
+
+    authDomain: "environmentalgpt-4974a.firebaseapp.com",
+
+    projectId: "environmentalgpt-4974a",
+
+    storageBucket: "environmentalgpt-4974a.firebasestorage.app",
+
+    messagingSenderId: "947094029861",
+
+    appId: "1:947094029861:web:ffa5c1ad4abff06d6e21cc"
+};
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const db = getFirestore(app);
+
+/* Protect page */
+onAuthStateChanged(auth, async user=>{
+
+    if(!user){
+
+        window.location.href = "login.html";
+
+        return;
+    }
+
+    try{
+
+        const snap =
+        await getDoc(doc(db,"users",user.uid));
+
+        if(!snap.exists()){
+
+            alert("User data not found");
+
+            window.location.href = "dashboard.html";
+
+            return;
+        }
+
+        const userData = snap.data();
+
+        /* Only admins allowed */
+        if(userData.role !== "admin"){
+
+            alert("Access denied");
+
+            window.location.href = "dashboard.html";
+
+            return;
+        }
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert("Error checking access");
+
+        window.location.href = "dashboard.html";
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>

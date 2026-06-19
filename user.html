@@ -44,6 +44,7 @@ tr:hover { background:#eee; }
 button { padding:5px 10px; margin:2px; border:none; border-radius:4px; cursor:pointer; font-size:0.85em; }
 button.enable { background:#0bb40b; color:white; }
 button.disable { background:#d01a0b; color:white; }
+button.delete { background:#6b0000; color:white; }
 
 form { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:15px; background:white; padding:15px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
 form input { flex:1; padding:8px; border-radius:6px; border:1px solid #ccc; }
@@ -107,8 +108,9 @@ form button { flex:none; background:#1e3a8a; color:white; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-functions.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCvL_D8wRVC3hS0mEvTt2J_D-LG7wFFpx0",
@@ -124,6 +126,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const functions = getFunctions(app);
 
 const usersBody = document.getElementById("users-body");
 const adminContent = document.getElementById("admin-content");
@@ -197,6 +200,7 @@ function loadUsers() {
                         ${user.disabled ? 'Enable' : 'Disable'}
                     </button>
                     <button onclick="editUser('${docSnap.id}', '${user.name}', '${user.email}', '${user.whatsapp}', '${trialEnd.toISOString().slice(0,10)}')">Edit</button>
+                    <button class="delete" onclick="deleteUser('${docSnap.id}', '${user.name}', '${user.email}')">Delete</button>
                 </td>
             `;
             usersBody.appendChild(tr);
@@ -238,6 +242,41 @@ window.editUser = async (uid, name, email, whatsapp, trialEndDate)=>{
     const newTrialEnd = prompt("Trial End Date (YYYY-MM-DD):", trialEndDate) || trialEndDate;
 
     await updateDoc(doc(db, "users", uid), {name:newName, email:newEmail, whatsapp:newWhatsapp, trialEndDate:new Date(newTrialEnd)});
+};
+
+// ---- Delete User (permanently) ----
+window.deleteUser = async (uid, name, email)=>{
+    const confirmDelete = confirm(
+        `Permanently delete ${name} (${email})?\n\nThis removes their record from the database. To let them sign up again with the SAME email, their login account must also be removed (see note below if it fails).`
+    );
+    if(!confirmDelete) return;
+
+    try{
+        // 1. Remove the Firestore user document
+        await deleteDoc(doc(db, "users", uid));
+
+        // 2. Try to remove the matching login (Auth) account too, via a
+        //    Cloud Function, since the client SDK cannot delete another
+        //    user's Auth account directly. This requires a deployed
+        //    callable function named "deleteAuthUser" that takes { uid }
+        //    and uses the Admin SDK to call admin.auth().deleteUser(uid).
+        try{
+            const deleteAuthUser = httpsCallable(functions, "deleteAuthUser");
+            await deleteAuthUser({ uid });
+            alert(`${name} was permanently deleted (database + login account). They can now sign up again with the same email.`);
+        }catch(fnErr){
+            console.warn("Auth deletion function not available or failed:", fnErr);
+            alert(
+                `${name}'s database record was deleted.\n\n` +
+                `However, their login (email/password) account could NOT be removed automatically ` +
+                `(no Cloud Function set up for this yet). If they try to sign up again with "${email}", ` +
+                `it may say "email already in use". To fully free up the email, delete that user manually ` +
+                `from Firebase Console → Authentication → Users, or set up a "deleteAuthUser" Cloud Function.`
+            );
+        }
+    }catch(err){
+        alert("Error deleting user: "+err.message);
+    }
 };
 
 // ---- Redirect to Dashboard ----
